@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>FreightWise Programming Test</title>
+
+    <script>
+        'use strict';
+
+        /**
+         * Software Developer test.
+         *
+         * Doing research and making API calls are an important part of what we do at FreightWise.  This test will
+         * demonstrate your abilities to:
+         *
+         * - Make an API call
+         * - Research an API
+         * - Do basic DOM manipulation
+         * - Parse data
+         * - Handle errors
+         * - Be creative
+         *
+         * Feel free to ask any questions you may have.  Use a lot of comments, and explain why you are doing things.
+         * Don't spend more than 1-2 hours on it - we aren't expecting a finished product, but it should work and look
+         * nice.  Feel free to use any third party libraries, and if you do so, explain why you used them instead of
+         * built in browser APIs.
+         *
+         * Instructions:
+         * - Use the axios (https://github.com/axios/axios) request library to make an API call to the OpenWeatherMap
+         *   API for Current Weather Data using this API key:  25e989bd41e3e24ce13173d8126e0fd6
+         *   We've already imported this library to get you started.
+         * - Use either async/await or Promises.
+         * - Get the weather for Brentwood, TN, and write it to the DOM using the `setResults` method below.  Be
+         *   creative and make it look nice.
+         * - Handle errors and use the `setError` method below to display the error.  Also make it look nice.
+         * - If you find any mistakes in the test, fix them, and leave a comment about what you fixed and why.
+         * - Make sure your code is readable and maintainable.
+         * - Use plenty of descriptive comments.
+         * - Make sure your code runs in the latest version of Google Chrome and Firefox (ES6 is allowed).
+         * - Make your code live (GitHub with GitHub pages works nice).
+         * - Send a link to your finished test to dev-team-jobs@freightwisellc.com.
+         *
+         * Feel free to add your own twist to it (completely optional).  Here are a few ideas:
+         * - Sign up for NewsAPI.org and get the Top Headlines and show them along with the weather.
+         * - Use the browser location API to get the user's current location, and show that location's weather.
+         * - Show a satellite map of the weather in Brentwood.
+         * - Request a user's phone number and send them an SMS with the weather.
+         */
+
+        const API_KEY = 'bda09725b0f89120a30ffadb06616106';
+        const BASE_URL = 'https://api.openweathermap.org/data/2.5';
+        const CITY = 'Brentwood';
+        const STATE = 'TN';
+        const COUNTRY = 'USA';
+
+        class Test {
+            constructor() {
+                this.testResultsHeader = document.getElementsByClassName('test-results-header');
+                this.testResults = document.getElementsByClassName('test-results');
+                this.testResultsCurrentLocationHeader = document.getElementsByClassName('test-results-current-location-header');
+                this.testResultsCurrentLocation = document.getElementsByClassName('test-results-current-location');
+            }
+
+            async run() {
+                console.log(new Date().toISOString(), '[Test]', 'Running the test');
+
+                try {
+                    // retrive city data
+                    const cityResponse = await axios.get(`${BASE_URL}/weather?q=${CITY},${STATE},${COUNTRY}&appid=${API_KEY}`,
+                                                        {headers: {'Content-Type': 'application/json'}});
+                    if (cityResponse.status == 200) {
+                        //get lat and lon for the city
+                        const { coord: {lat, lon} }  = cityResponse.data;
+
+                        // retrive weather data
+                        const weatherResponse = await axios.get(`${BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}`, 
+                                                            {headers: {'Content-Type': 'application/json'}});
+                                                            
+                        if (weatherResponse.status == 200) {
+                            const results = weatherResponse.data;
+
+                            // set header for city
+                            this.setElementText(this.testResultsHeader[0], `<h2>Weather for City: ${CITY}, ${STATE}, ${COUNTRY}</h2>`);
+
+                            // make json file to string format
+                            const msg = JSON.stringify(results, undefined, 2);
+
+                            // use <pre> tag to display json string
+                            this.setElementText(this.testResults[0], `<pre> ${msg} </pre>`);
+                        }
+                    }
+                } catch (errors) {
+                    this.setElementText(this.testResultsHeader[0], '');
+                    this.setElementText(this.testResults[0], `Error when retrieving weather for ${CITY},${STATE},${COUNTRY}. Error: ${errors.message}`);
+                }
+
+                // callback when success
+                const successCallback = async (position) => {
+                    // get latitude and longitude 
+                    const {coords: {latitude, longitude}} = position;
+
+                    try {
+                        // retrive weather data
+                        const weatherResponse = await axios.get(`${BASE_URL}/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}`, 
+                                                            {headers: {'Content-Type': 'application/json'}});
+                                                            
+                        if (weatherResponse.status == 200) {
+                            const results = weatherResponse.data;
+
+                            // set header for current location
+                            this.setElementText(this.testResultsCurrentLocationHeader[0], `<h2>Weather for Current Location: ${results.name}</h2>`);
+
+                            // make json file to string format
+                            const msg = JSON.stringify(results, undefined, 2);
+
+                            // use <pre> tag to display json string
+                            this.setElementText(this.testResultsCurrentLocation[0], `<pre> ${msg} </pre>`);
+                        }
+                    } catch (error) {
+                        this.setElementText(this.testResultsCurrentLocationHeader[0], '');
+                        this.setElementText(this.testResultsCurrentLocation[0], `Error when retrieving weather for current location`);
+                    }
+                };
+
+                // callback when failed
+                const errorCallback = (error) => {
+                    this.setElementText(this.testResultsCurrentLocationHeader[0], '');
+                    this.setElementText(this.testResultsCurrentLocation[0], error.message);
+                };
+
+                // get current location for the device
+                navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
+
+            }
+
+            setElementText(element, message) {
+                element.innerHTML = (message || '').toString();
+            }
+        }
+    </script>
+
+    <style>
+        .button-container {
+            text-align: center;
+        }
+
+        .button-container > button {
+            margin: 0;
+            padding: 10px 18px;
+            color: white;
+            background-color: #008000;
+            border: none;
+            border-radius: 3px;
+            transition: all 200ms ease-in-out;
+            font-size: 14px;
+        }
+
+        .button-container > button:hover {
+            background-color: #00A000;
+        }
+
+        .button-container > button:active {
+            background-color: #006000;
+        }
+    </style>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+    <div class="button-container"></div>
+    <div class="test-results-header"></div>
+    <div class="test-results"></div>
+    <div class="test-results-current-location-header"></div>
+    <div class="test-results-current-location"></div>
+
+    <script>
+        'use strict';
+
+        /**
+         * Creates a button for kicking off the test and adds it to the DOM.
+         *
+         * @param {HTMLElement} context  the parent element to add the button to
+         * @param {Test}        test     the test to be executed
+         * @returns {HTMLElement} the button added to the test
+         */
+        function addButtonForTest(context, test) {
+            let testButton = document.createElement('button');
+
+            testButton.type = 'button';
+            testButton.innerText = 'Get the Nashville Weather';
+            testButton.onclick = () => test.run();
+
+            context.appendChild(testButton);
+
+            return testButton;
+        }
+
+        // Create the Test and add a button to the UI for running the test
+        const test = new Test();
+        const buttonContainer = document.getElementsByClassName('button-container')[0];
+
+        addButtonForTest(buttonContainer, test);
+    </script>
+</body>
+</html>
